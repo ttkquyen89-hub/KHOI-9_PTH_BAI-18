@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Học Tập KHTN 9 - Bài 18</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX compilation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Tối ưu hóa in ấn */
+        @media print {
+            body { background-color: white; }
+            @page { margin: 1.5cm; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- CÁC BIỂU TƯỢNG (ICONS) ---
+        const Printer = ({ size = 28, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        );
+        const Save = ({ size = 28, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        );
+        const CheckCircle2 = ({ size = 80, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        );
+        const X = ({ size = 28, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        );
+        const Pointer = ({ className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 15.352-1.928 3.524a1 1 0 0 1-1.748.016L8.4 14.28 4.654 18.23a.5.5 0 0 1-.85-.353l.564-15a.5.5 0 0 1 .843-.343l13.13 11.536a.5.5 0 0 1-.29.866Z"></path></svg>
+        );
+
+        // --- CÁC DỮ LIỆU ĐÁP ÁN TRẮC NGHIỆM ĐƯỢC TẠO TỪ SGK ---
+        const OPTS = {
+            nv1_q1: [
+                "Nhôm, thép. Thể hiện tính dẻo.",
+                "Thủy tinh, gỗ. Thể hiện tính cứng.",
+                "Nhôm, thép. Thể hiện tính đàn hồi."
+            ],
+            nv1_q2: [
+                "Đồng, vàng, nhôm. Thể hiện tính dẻo.",
+                "Gỗ, sứ, cao su. Thể hiện tính cứng.",
+                "Vật bằng đồng, vàng. Thể hiện tính đàn hồi."
+            ],
+            nv1_q3: [
+                "Thể hiện tính dẫn nhiệt.",
+                "Thể hiện tính dẫn điện.",
+                "Thể hiện tính dẻo."
+            ],
+            nv1_q4: [
+                "Đồng, nhôm dẫn điện tốt hơn sắt và nhẹ hơn.",
+                "Sắt đắt tiền hơn đồng và nhôm.",
+                "Sắt không thể kéo thành sợi."
+            ],
+            nv1_q5: [
+                "Sáng lấp lánh. Gọi là tính ánh kim.",
+                "Sáng lấp lánh. Gọi là tính cứng.",
+                "Xỉn màu, thô ráp. Gọi là gỉ sét."
+            ],
+            // Bảng Nhiệm vụ 2
+            nv2_trangsuc_kl: ["Vàng, bạc", "Sắt, thép", "Nhôm, kẽm"],
+            nv2_trangsuc_tc: ["Tính dẻo, có ánh kim", "Tính dẫn điện tốt", "Nhiệt độ nóng chảy cao"],
+            nv2_daydien_kl: ["Đồng, nhôm", "Vàng, bạc", "Sắt, chì"],
+            nv2_daydien_tc: ["Tính dẫn điện tốt", "Tính ánh kim", "Tính cứng"],
+            nv2_xoongnoi_kl: ["Nhôm, inox (thép)", "Chì, thiếc", "Vàng, bạc"],
+            nv2_xoongnoi_tc: ["Dẫn nhiệt tốt, nhẹ", "Tính dẫn điện tốt", "Nhiệt độ nóng chảy thấp"],
+            nv2_cauduong_kl: ["Thép", "Đồng, nhôm", "Vàng, bạc"],
+            nv2_cauduong_tc: ["Cứng, chịu lực tốt", "Tính dẻo, dễ uốn", "Tính ánh kim"],
+            
+            // Nhiệm vụ 3
+            nv3_datmong: ["Vàng (Au)", "Nhôm (Al)", "Đồng (Cu)"],
+            nv3_dandien: ["Bạc (Ag)", "Đồng (Cu)", "Sắt (Fe)"],
+            nv3_dannhiet: ["Bạc (Ag)", "Nhôm (Al)", "Kẽm (Zn)"],
+            nv3_nongchay_cao: ["Tungsten (W)", "Sắt (Fe)", "Vàng (Au)"],
+            nv3_nongchay_thap: ["Thủy ngân (Hg)", "Natri (Na)", "Chì (Pb)"],
+            
+            // Kết luận 1
+            kl1: [
+                "Tính dẻo - Dẫn điện, dẫn nhiệt - Ánh kim.",
+                "Tính cứng - Tính đàn hồi - Không gỉ.",
+                "Tính dẻo - Không dẫn điện - Không dẫn nhiệt."
+            ],
+            
+            // Nhiệm vụ 4
+            nv4_q1_tl: ["Chất rắn màu nâu đen: Iron(II, III) oxide (Fe3O4)", "Chất rắn màu trắng: Iron(II) oxide (FeO)", "Khí màu nâu đỏ bay lên"],
+            nv4_q1_pthh: ["3Fe + 2O2 →(t°) Fe3O4", "2Fe + O2 →(t°) 2FeO", "Fe + O2 →(t°) FeO2"],
+            nv4_q2_sat: ["iron(II, III) oxide (Fe3O4)", "iron(III) oxide (Fe2O3)"],
+            nv4_q2_nhom: ["aluminium oxide (Al2O3)", "aluminium(II) oxide (AlO)"],
+            nv4_q3_a: ["3Fe + 2O2 →(t°) Fe3O4", "4Fe + 3O2 →(t°) 2Fe2O3", "2Fe + O2 →(t°) 2FeO"],
+            nv4_q3_b: ["4Al + 3O2 →(t°) 2Al2O3", "2Al + 3O2 →(t°) Al2O3", "Al + O2 →(t°) AlO2"],
+            nv4_q4: [
+                "Hầu hết đều phản ứng (Fe, Al...). Một số ít không phản ứng (Au).",
+                "Tất cả các kim loại đều phản ứng mãnh liệt với oxygen.",
+                "Chỉ có sắt và nhôm mới có khả năng phản ứng."
+            ],
+            
+            // Nhiệm vụ 5
+            nv5_q1: ["2Zn + O2 →(t°) 2ZnO", "Zn + O2 →(t°) ZnO2", "3Zn + 2O2 →(t°) Zn3O4"],
+            nv5_q2: [
+                "Zinc phản ứng tạo lớp oxide bề mặt. Gold không phản ứng oxygen.",
+                "Vì kẽm mềm hơn vàng nên dễ bị không khí bào mòn.",
+                "Vì vàng có tính dẻo hơn kẽm nên không bị oxy hóa."
+            ],
+            
+            // Nhiệm vụ 6
+            nv6_q1_tl: ["Muối ăn màu trắng (Sodium chloride - NaCl).", "Chất khí màu vàng lục.", "Chất lỏng màu nâu đỏ."],
+            nv6_q1_pthh: ["2Na + Cl2 →(t°) 2NaCl", "Na + Cl2 →(t°) NaCl2", "2Na + 3Cl2 →(t°) 2NaCl3"],
+            nv6_q2: ["2Na + Cl2 →(t°) 2NaCl", "Na + Cl2 →(t°) NaCl2"],
+            nv6_q3: ["2Fe + 3Cl2 →(t°) 2FeCl3", "Fe + Cl2 →(t°) FeCl2", "3Fe + 4Cl2 →(t°) Fe3Cl8"],
+            nv6_q4: [
+                "Nhiều kim loại dễ phản ứng ở nhiệt độ cao, tạo muối chloride.",
+                "Kim loại hoàn toàn không có khả năng phản ứng.",
+                "Chỉ có các kim loại kiềm mới phản ứng được."
+            ]
+        };
+
+        const PhieuHocTap = () => {
+            const [formData, setFormData] = useState({
+                hoTen: '', lop: '',
+                nv1_q1: '', nv1_q2: '', nv1_q3: '', nv1_q4: '', nv1_q5: '',
+                nv2_trangsuc_kl: '', nv2_trangsuc_tc: '', nv2_daydien_kl: '', nv2_daydien_tc: '', nv2_xoongnoi_kl: '', nv2_xoongnoi_tc: '', nv2_cauduong_kl: '', nv2_cauduong_tc: '',
+                nv3_datmong: '', nv3_dandien: '', nv3_dannhiet: '', nv3_nongchay_cao: '', nv3_nongchay_thap: '',
+                kl1: '',
+                nv4_q1_tl: '', nv4_q1_pthh: '', nv4_q2_sat: '', nv4_q2_nhom: '', nv4_q3_a: '', nv4_q3_b: '', nv4_q4: '',
+                nv5_q1: '', nv5_q2: '',
+                nv6_q1_tl: '', nv6_q1_pthh: '', nv6_q2: '', nv6_q3: '', nv6_q4: ''
+            });
+
+            const [showModal, setShowModal] = useState(false);
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            // Nút chọn dạng Dropdown tùy chỉnh (cho câu hỏi dài)
+            const DropdownBlank = ({ name, options }) => {
+                const [isOpen, setIsOpen] = useState(false);
+                const value = formData[name];
+
+                return (
+                <React.Fragment>
+                    <div className="relative block w-full mt-2 print:hidden">
+                    <div 
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`cursor-pointer border-b-2 border-dashed transition-all p-3 min-h-[3.5rem] flex items-center justify-between rounded-t-lg
+                        ${value ? 'border-blue-500 text-blue-800 font-semibold bg-blue-50/50' : 'border-gray-400 text-gray-500 hover:bg-gray-50'}
+                        `}
+                    >
+                        <span className={value ? '' : 'italic'}>
+                        {value || '[ Nhấp vào chỗ trống này để chọn đáp án ]'}
+                        </span>
+                        <svg className={`w-5 h-5 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''} ${value ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    
+                    {isOpen && (
+                        <React.Fragment>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+                        <div className="absolute z-50 top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-2xl max-h-[50vh] overflow-y-auto">
+                            {options.map((opt, idx) => (
+                            <div 
+                                key={idx}
+                                onClick={() => {
+                                handleChange({ target: { name, value: opt } });
+                                setIsOpen(false);
+                                }}
+                                className={`p-4 border-b last:border-b-0 border-gray-100 hover:bg-blue-100 cursor-pointer transition-colors
+                                ${value === opt ? 'bg-blue-100 font-bold text-blue-800' : 'text-gray-800'}
+                                `}
+                            >
+                                {opt}
+                            </div>
+                            ))}
+                        </div>
+                        </React.Fragment>
+                    )}
+                    </div>
+                    {/* Hiển thị khi in */}
+                    <div className="hidden print:block mt-2 italic text-lg border-b border-dashed border-gray-400 pb-1 min-h-[2rem]">
+                    {value || "................................................................................................"}
+                    </div>
+                </React.Fragment>
+                );
+            };
+
+            // Nút chọn native (cho bảng và câu ngắn để tránh bị che)
+            const SelectBlank = ({ name, options, placeholder = "...................." }) => {
+                const value = formData[name];
+                return (
+                <React.Fragment>
+                    <div className="relative w-full print:hidden">
+                    <select
+                        name={name}
+                        value={value}
+                        onChange={handleChange}
+                        className={`w-full p-2 bg-transparent border-b-2 border-dashed outline-none appearance-none cursor-pointer transition-colors text-lg
+                        ${value ? 'border-blue-500 text-blue-800 font-semibold' : 'border-gray-400 text-gray-500 italic'}
+                        `}
+                    >
+                        <option value="" disabled>{placeholder}</option>
+                        {options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                        <svg className={`w-5 h-5 ${value ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    </div>
+                    {/* Hiển thị khi in */}
+                    <div className="hidden print:block text-lg border-b border-dashed border-gray-400 min-h-[1.5rem]">
+                    {value || "...................."}
+                    </div>
+                </React.Fragment>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-100 py-10 font-sans print:py-0 print:bg-white text-gray-800 text-lg">
+                <div className="max-w-5xl mx-auto bg-white p-10 rounded-3xl shadow-2xl print:shadow-none print:p-0">
+                    
+                    {/* TIÊU ĐỀ PHIẾU */}
+                    <div className="text-center border-b-4 border-blue-600 pb-8 mb-10 print:border-black print:pb-4">
+                    <h2 className="text-2xl font-bold text-gray-600 mb-2 print:text-black">PHIẾU HỌC TẬP CHUẨN BỊ BÀI Ở NHÀ</h2>
+                    <h1 className="text-4xl font-extrabold text-blue-700 uppercase tracking-wide print:text-black">KHTN 9 – BÀI 18: TÍNH CHẤT CHUNG CỦA KIM LOẠI</h1>
+                    
+                    <div className="flex flex-wrap justify-center gap-10 mt-8 text-xl">
+                        <div className="flex items-center gap-3">
+                        <span className="font-bold">Họ và tên:</span>
+                        <input 
+                            type="text" name="hoTen" value={formData.hoTen} onChange={handleChange}
+                            className="border-b-2 border-gray-400 bg-transparent outline-none focus:border-blue-500 px-2 w-72 print:w-auto font-medium text-blue-900" 
+                        />
+                        </div>
+                        <div className="flex items-center gap-3">
+                        <span className="font-bold">Lớp:</span>
+                        <input 
+                            type="text" name="lop" value={formData.lop} onChange={handleChange}
+                            className="border-b-2 border-gray-400 bg-transparent outline-none focus:border-blue-500 px-2 w-32 print:w-auto font-medium text-blue-900" 
+                        />
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* ================= PHẦN I ================= */}
+                    <section className="mb-12 bg-amber-50 p-6 rounded-3xl border-2 border-amber-200 print:bg-transparent print:border-none print:p-0">
+                    <h2 className="text-3xl font-extrabold bg-amber-500 text-white p-4 rounded-2xl mb-8 shadow-md print:bg-transparent print:text-black print:p-0 print:shadow-none inline-block">
+                        I. TÌM HIỂU TÍNH CHẤT VẬT LÍ CỦA KIM LOẠI
+                    </h2>
+                    
+                    {/* Nhiệm vụ 1 */}
+                    <div className="mb-8 p-6 border-2 border-amber-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-amber-900 flex items-center gap-2">
+                        <Pointer className="text-amber-500 print:hidden"/> 
+                        Nhiệm vụ 1. Đọc nội dung SGK và quan sát Hình 18.1, trả lời các câu hỏi sau.
+                        </h3>
+                        
+                        <div className="space-y-8">
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 1. Khi uốn các thanh thủy tinh, gỗ, nhôm và thép, thanh nào có thể bị uốn cong mà không gãy? Từ đó, em nhận xét gì về tính chất của kim loại?</p>
+                            <DropdownBlank name="nv1_q1" options={OPTS.nv1_q1} />
+                        </div>
+                        
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 2. Khi dùng búa đập vào các vật bằng đồng, gỗ, vàng, nhôm, cao su và sứ, vật nào bị biến dạng (vỡ vụn, dập méo, ...)? Theo em, tính chất nào của kim loại được thể hiện qua hiện tượng này?</p>
+                            <DropdownBlank name="nv1_q2" options={OPTS.nv1_q2} />
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 3. Khi nhúng thìa nhôm vào cốc nước sôi, tay cầm thìa sẽ nóng lên. Hiện tượng này chứng tỏ nhôm có tính chất vật lí nào?</p>
+                            <DropdownBlank name="nv1_q3" options={OPTS.nv1_q3} />
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 4. Vì sao dây dẫn điện thường được làm bằng đồng hoặc nhôm mà không làm bằng sắt trong những ứng dụng thông thường?</p>
+                            <DropdownBlank name="nv1_q4" options={OPTS.nv1_q4} />
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 5. Quan sát bề mặt miếng vàng, nhôm và đồng trong Hình 18.1. Em nhận xét gì về vẻ ngoài của các kim loại này? Tính chất đó được gọi là gì?</p>
+                            <DropdownBlank name="nv1_q5" options={OPTS.nv1_q5} />
+                        </div>
+                        </div>
+                    </div>
+
+                    {/* Nhiệm vụ 2 */}
+                    <div className="mb-8 p-6 border-2 border-amber-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-amber-900 flex items-center gap-2">
+                        <Pointer className="text-amber-500 print:hidden"/> 
+                        Nhiệm vụ 2. Quan sát các ứng dụng của kim loại và hoàn thành bảng.
+                        </h3>
+                        <div className="overflow-x-auto rounded-xl border border-amber-300">
+                        <table className="w-full border-collapse text-left bg-white print:border-black">
+                            <thead>
+                            <tr className="bg-amber-100 print:bg-gray-100 text-amber-900 text-xl">
+                                <th className="border-r border-b border-amber-300 p-4 font-bold print:border-black w-1/3">Ứng dụng trong thực tế</th>
+                                <th className="border-r border-b border-amber-300 p-4 font-bold print:border-black w-1/3">Kim loại được sử dụng</th>
+                                <th className="border-b border-amber-300 p-4 font-bold print:border-black w-1/3">Tính chất vật lí phù hợp</th>
+                            </tr>
+                            </thead>
+                            <tbody className="text-lg">
+                            <tr>
+                                <td className="border-r border-b border-amber-200 p-4 print:border-black font-bold text-gray-700 bg-amber-50/50">Làm đồ trang sức</td>
+                                <td className="border-r border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_trangsuc_kl" options={OPTS.nv2_trangsuc_kl} /></td>
+                                <td className="border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_trangsuc_tc" options={OPTS.nv2_trangsuc_tc} /></td>
+                            </tr>
+                            <tr>
+                                <td className="border-r border-b border-amber-200 p-4 print:border-black font-bold text-gray-700 bg-amber-50/50">Làm lõi dây điện</td>
+                                <td className="border-r border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_daydien_kl" options={OPTS.nv2_daydien_kl} /></td>
+                                <td className="border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_daydien_tc" options={OPTS.nv2_daydien_tc} /></td>
+                            </tr>
+                            <tr>
+                                <td className="border-r border-b border-amber-200 p-4 print:border-black font-bold text-gray-700 bg-amber-50/50">Làm xoong, nồi, chảo</td>
+                                <td className="border-r border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_xoongnoi_kl" options={OPTS.nv2_xoongnoi_kl} /></td>
+                                <td className="border-b border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_xoongnoi_tc" options={OPTS.nv2_xoongnoi_tc} /></td>
+                            </tr>
+                            <tr>
+                                <td className="border-r border-amber-200 p-4 print:border-black font-bold text-gray-700 bg-amber-50/50">Xây dựng cầu, đường ray</td>
+                                <td className="border-r border-amber-200 p-2 print:border-black print:p-1"><SelectBlank name="nv2_cauduong_kl" options={OPTS.nv2_cauduong_kl} /></td>
+                                <td className="p-2 print:border-black print:p-1"><SelectBlank name="nv2_cauduong_tc" options={OPTS.nv2_cauduong_tc} /></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    {/* Nhiệm vụ 3 */}
+                    <div className="mb-8 p-6 border-2 border-amber-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-amber-900 flex items-center gap-2">
+                        <Pointer className="text-amber-500 print:hidden"/> 
+                        Nhiệm vụ 3. Đọc SGK và chọn tên kim loại thích hợp điền vào chỗ trống.
+                        </h3>
+                        <ul className="space-y-5 text-xl">
+                        <li className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100 print:border-none print:bg-transparent">
+                            <span className="font-semibold flex-1">Kim loại dễ dát mỏng, dễ kéo sợi:</span>
+                            <div className="sm:w-64"><SelectBlank name="nv3_datmong" options={OPTS.nv3_datmong} /></div>
+                        </li>
+                        <li className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100 print:border-none print:bg-transparent">
+                            <span className="font-semibold flex-1">Kim loại dẫn điện tốt nhất:</span>
+                            <div className="sm:w-64"><SelectBlank name="nv3_dandien" options={OPTS.nv3_dandien} /></div>
+                        </li>
+                        <li className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100 print:border-none print:bg-transparent">
+                            <span className="font-semibold flex-1">Kim loại dẫn nhiệt tốt nhất:</span>
+                            <div className="sm:w-64"><SelectBlank name="nv3_dannhiet" options={OPTS.nv3_dannhiet} /></div>
+                        </li>
+                        <li className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100 print:border-none print:bg-transparent">
+                            <span className="font-semibold flex-1">Kim loại có nhiệt độ nóng chảy cao nhất:</span>
+                            <div className="sm:w-64"><SelectBlank name="nv3_nongchay_cao" options={OPTS.nv3_nongchay_cao} /></div>
+                        </li>
+                        <li className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100 print:border-none print:bg-transparent">
+                            <span className="font-semibold flex-1">Kim loại có nhiệt độ nóng chảy thấp nhất:</span>
+                            <div className="sm:w-64"><SelectBlank name="nv3_nongchay_thap" options={OPTS.nv3_nongchay_thap} /></div>
+                        </li>
+                        </ul>
+                    </div>
+
+                    {/* Kết luận 1 */}
+                    <div className="p-6 border-2 border-amber-400 rounded-2xl bg-amber-100 shadow-md print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-4 text-amber-900 print:text-black">Kết luận 1. Nêu ba tính chất vật lí chung của kim loại.</h3>
+                        <DropdownBlank name="kl1" options={OPTS.kl1} />
+                    </div>
+                    </section>
+
+                    {/* ================= PHẦN II ================= */}
+                    <section className="bg-emerald-50 p-6 rounded-3xl border-2 border-emerald-200 print:bg-transparent print:border-none print:p-0">
+                    <h2 className="text-3xl font-extrabold bg-emerald-600 text-white p-4 rounded-2xl mb-8 shadow-md print:bg-transparent print:text-black print:p-0 print:shadow-none inline-block">
+                        II. TÌM HIỂU TÍNH CHẤT HÓA HỌC CỦA KIM LOẠI
+                    </h2>
+                    
+                    <h3 className="font-bold text-2xl mb-4 text-emerald-900 border-b-2 border-emerald-200 pb-2">1. Tác dụng với phi kim</h3>
+                    <h4 className="font-bold text-xl mb-6 text-emerald-800 italic bg-emerald-100 inline-block px-4 py-2 rounded-lg">a) Tác dụng với oxygen</h4>
+                    
+                    {/* Nhiệm vụ 4 */}
+                    <div className="mb-8 p-6 border-2 border-emerald-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-emerald-900 flex items-center gap-2">
+                        <Pointer className="text-emerald-500 print:hidden"/> 
+                        Nhiệm vụ 4. Đọc tác dụng với oxygen và quan sát Hình 18.2.
+                        </h3>
+                        <div className="space-y-8">
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 1. Khi đốt nóng dây sắt đưa vào bình chứa oxygen, sắt cháy tạo thành chất rắn màu nâu đen. Chất tạo thành là gì?</p>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div className="md:col-span-12 flex flex-col gap-2">
+                                <span className="font-bold text-emerald-700 uppercase">Trả lời:</span>
+                                <DropdownBlank name="nv4_q1_tl" options={OPTS.nv4_q1_tl} />
+                            </div>
+                            <div className="md:col-span-12 flex flex-col gap-2 mt-2">
+                                <span className="font-bold text-emerald-700 uppercase">Phương trình hóa học:</span>
+                                <DropdownBlank name="nv4_q1_pthh" options={OPTS.nv4_q1_pthh} />
+                            </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-emerald-50/50 p-5 rounded-xl border border-emerald-100">
+                            <p className="font-bold text-xl text-gray-800 mb-4">Câu 2. Hoàn thành sơ đồ phản ứng sau:</p>
+                            <div className="space-y-4 text-xl">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <span className="font-semibold w-48 text-emerald-900">Sắt + oxygen <span className="font-bold text-2xl">→</span></span>
+                                <div className="flex-1"><DropdownBlank name="nv4_q2_sat" options={OPTS.nv4_q2_sat} /></div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <span className="font-semibold w-48 text-emerald-900">Nhôm + oxygen <span className="font-bold text-2xl">→</span></span>
+                                <div className="flex-1"><DropdownBlank name="nv4_q2_nhom" options={OPTS.nv4_q2_nhom} /></div>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 3. Chọn phương trình hóa học đúng:</p>
+                            <div className="mt-4 space-y-6">
+                            <div className="bg-gray-50 p-4 rounded-xl">
+                                <span className="block mb-3 font-semibold text-lg">a) Sắt tác dụng với oxygen tạo iron(II,III) oxide (Fe₃O₄).</span>
+                                <DropdownBlank name="nv4_q3_a" options={OPTS.nv4_q3_a} />
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-xl">
+                                <span className="block mb-3 font-semibold text-lg">b) Nhôm tác dụng với oxygen tạo aluminium oxide (Al₂O₃).</span>
+                                <DropdownBlank name="nv4_q3_b" options={OPTS.nv4_q3_b} />
+                            </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 4. Quan sát SGK, cho biết tất cả kim loại có phản ứng với oxygen hay không? Nêu ví dụ.</p>
+                            <DropdownBlank name="nv4_q4" options={OPTS.nv4_q4} />
+                        </div>
+                        </div>
+                    </div>
+
+                    {/* Nhiệm vụ 5 */}
+                    <div className="mb-10 p-6 border-2 border-emerald-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-emerald-900 flex items-center gap-2">
+                        <Pointer className="text-emerald-500 print:hidden"/> 
+                        Nhiệm vụ 5. Quan sát thông tin phản ứng của zinc và gold với oxygen.
+                        </h3>
+                        <div className="space-y-8">
+                        <div>
+                            <p className="font-bold text-xl text-gray-800 mb-3">Câu 1. Chọn phương trình phản ứng giữa zinc (Zn) và oxygen (O₂):</p>
+                            <DropdownBlank name="nv5_q1" options={OPTS.nv5_q1} />
+                        </div>
+                        
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 2. Vì sao đồ vật bằng zinc có thể bị biến đổi bề mặt, trong khi trang sức gold giữ được vẻ sáng bóng?</p>
+                            <DropdownBlank name="nv5_q2" options={OPTS.nv5_q2} />
+                        </div>
+                        </div>
+                    </div>
+
+                    <h4 className="font-bold text-xl mb-6 text-teal-800 italic bg-teal-100 inline-block px-4 py-2 rounded-lg">b) Tác dụng với chlorine</h4>
+
+                    {/* Nhiệm vụ 6 */}
+                    <div className="p-6 border-2 border-teal-200 rounded-2xl bg-white shadow-sm print:border-none print:p-0 print:bg-transparent print:shadow-none">
+                        <h3 className="font-bold text-2xl mb-6 text-teal-900 flex items-center gap-2">
+                        <Pointer className="text-teal-500 print:hidden"/> 
+                        Nhiệm vụ 6. Quan sát Hình 18.3 và Hình 18.4 trong SGK.
+                        </h3>
+                        <div className="space-y-8">
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 1. Khi đốt nóng sodium (Na) đưa vào bình chứa chlorine (Cl₂), phản ứng tạo thành chất gì?</p>
+                            <div className="mt-4 grid grid-cols-1 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <span className="font-bold text-teal-700 uppercase">Trả lời:</span>
+                                <DropdownBlank name="nv6_q1_tl" options={OPTS.nv6_q1_tl} />
+                            </div>
+                            <div className="flex flex-col gap-2 mt-2">
+                                <span className="font-bold text-teal-700 uppercase">Phương trình hóa học:</span>
+                                <DropdownBlank name="nv6_q1_pthh" options={OPTS.nv6_q1_pthh} />
+                            </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800 mb-3">Câu 2. Chọn PTHH đúng giữa sodium và chlorine:</p>
+                            <DropdownBlank name="nv6_q2" options={OPTS.nv6_q2} />
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800 mb-3">Câu 3. Sắt phản ứng tạo thành iron(III) chloride (FeCl₃). Chọn PTHH đúng:</p>
+                            <DropdownBlank name="nv6_q3" options={OPTS.nv6_q3} />
+                        </div>
+
+                        <div>
+                            <p className="font-bold text-xl text-gray-800">Câu 4. Qua hai thí nghiệm trên, em nhận xét gì về khả năng phản ứng của kim loại với chlorine?</p>
+                            <DropdownBlank name="nv6_q4" options={OPTS.nv6_q4} />
+                        </div>
+                        </div>
+                    </div>
+                    </section>
+
+                    {/* CÁC NÚT TƯƠNG TÁC (ẨN KHI IN) */}
+                    <div className="mt-12 flex justify-center gap-6 print:hidden border-t-4 border-gray-200 pt-10">
+                    <button 
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-lg hover:shadow-xl text-xl hover:-translate-y-1"
+                    >
+                        <Printer size={28} />
+                        In phiếu học tập
+                    </button>
+                    
+                    <button 
+                        onClick={() => setShowModal(true)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg hover:shadow-xl text-xl hover:-translate-y-1"
+                    >
+                        <Save size={28} />
+                        Hoàn thành & Lưu
+                    </button>
+                    </div>
+
+                </div>
+
+                {/* MODAL THÔNG BÁO THÀNH CÔNG */}
+                {showModal && (
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 print:hidden backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl p-10 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-300">
+                        <button 
+                        onClick={() => setShowModal(false)}
+                        className="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors bg-gray-100 rounded-full p-2"
+                        >
+                        <X size={28} />
+                        </button>
+                        
+                        <div className="flex flex-col items-center text-center">
+                        <CheckCircle2 size={80} className="text-green-500 mb-6 drop-shadow-md" />
+                        <h3 className="text-3xl font-extrabold text-gray-800 mb-4">Đã lưu thành công!</h3>
+                        <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                            Tuyệt vời <strong className="text-blue-700">{formData.hoTen ? formData.hoTen : 'bạn'}</strong>! Bạn đã hoàn thành Phiếu học tập. Hãy nhấn nút "In phiếu" để lưu dạng PDF hoặc nộp cho giáo viên nhé.
+                        </p>
+                        <button 
+                            onClick={() => setShowModal(false)}
+                            className="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl hover:bg-blue-700 transition-colors text-xl shadow-md"
+                        >
+                            Đồng ý
+                        </button>
+                        </div>
+                    </div>
+                    </div>
+                )}
+                
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PhieuHocTap />);
+    </script>
+</body>
+</html>
